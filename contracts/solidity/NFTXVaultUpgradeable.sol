@@ -65,6 +65,7 @@ contract NFTXVaultUpgradeable is
         bool _allowAllItems
     ) public override virtual initializer {
         __Ownable_init();
+        // when generate vault, also generate the ftoken and enableMint
         __ERC20_init(_name, _symbol);
         require(_assetAddress != address(0), "Asset != address(0)");
         assetAddress = _assetAddress;
@@ -192,7 +193,7 @@ contract NFTXVaultUpgradeable is
         // Take the NFTs.
         uint256 count = receiveNFTs(tokenIds, amounts);
 
-        // Mint to the user.
+        // Mint tokens to the user.
         _mint(to, base * count);
         uint256 totalFee = mintFee() * count;
         _chargeFee(msg.sender, totalFee, 0);
@@ -201,6 +202,7 @@ contract NFTXVaultUpgradeable is
         return count;
     }
 
+    //贖回 tokens -> NFT
     function redeem(uint256 amount, uint256[] calldata specificIds)
         external
         override
@@ -383,11 +385,13 @@ contract NFTXVaultUpgradeable is
         _eligibilityStorage.afterRedeemHook(tokenIds);
     }
 
+    // 接收NFT
     function receiveNFTs(uint256[] memory tokenIds, uint256[] memory amounts)
         internal
         virtual
         returns (uint256)
     {
+        //check the validity of nft
         require(allValidNFTs(tokenIds), "NFTXVault: not eligible");
         uint256 length = tokenIds.length;
         if (is1155) {
@@ -429,6 +433,7 @@ contract NFTXVaultUpgradeable is
         }
     }
 
+    //從VAULT取出
     function withdrawNFTsTo(
         uint256 amount,
         uint256[] memory specificIds,

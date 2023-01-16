@@ -13,6 +13,7 @@ import "./NFTXVaultUpgradeable.sol";
 
 // Authors: @0xKiwi_ and @alexgausman.
 
+// "Upgradeable" means has no constructor,instead by initializer
 contract NFTXVaultFactoryUpgradeable is
     PausableUpgradeable,
     UpgradeableBeacon,
@@ -64,10 +65,14 @@ contract NFTXVaultFactoryUpgradeable is
     ) external virtual override returns (uint256) {
         onlyOwnerIfPaused(0);
         require(feeDistributor != address(0), "NFTX: Fee receiver unset");
-        require(childImplementation() != address(0), "NFTX: Vault implementation unset");
+        require(childImplementation() != address(0), "NFTX: Vault implementation unset")
+        // depoly vault and return vault address
         address vaultAddr = deployVault(name, symbol, _assetAddress, is1155, allowAllItems);
         uint256 _vaultId = vaults.length;
+        // mapping(address => address[]) _vaultsForAsset
+        // mapping asset address to vault address
         _vaultsForAsset[_assetAddress].push(vaultAddr);
+        // record vault address
         vaults.push(vaultAddr);
         INFTXFeeDistributor(feeDistributor).initializeVaultReceivers(_vaultId);
         emit NewVault(_vaultId, vaultAddr, _assetAddress);
@@ -190,6 +195,7 @@ contract NFTXVaultFactoryUpgradeable is
         return vaults.length;
     }
     
+    //call NFTXVaultUpgradeable.sol and deploy valut contract
     function deployVault(
         string memory name,
         string memory symbol,
@@ -198,6 +204,7 @@ contract NFTXVaultFactoryUpgradeable is
         bool allowAllItems
     ) internal returns (address) {
         address newBeaconProxy = address(new BeaconProxy(address(this), ""));
+        // Gen tokens contract & deploy
         NFTXVaultUpgradeable(newBeaconProxy).__NFTXVault_init(name, symbol, _assetAddress, is1155, allowAllItems);
         // Manager for configuration.
         NFTXVaultUpgradeable(newBeaconProxy).setManager(msg.sender);
